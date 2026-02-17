@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeKit Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0a0a0f;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: rgba(255,255,255,0.02);
+            border-right: 1px solid rgba(255,255,255,0.08);
+            padding: 24px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 24px 32px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #a78bfa;
+            margin-bottom: 8px;
+        }
+
+        .user-info {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+        }
+
+        .nav-menu {
+            padding: 32px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: #a78bfa;
+            border-left-color: #a78bfa;
+        }
+
+        .nav-item.active {
+            background: rgba(167, 139, 250, 0.1);
+            color: #a78bfa;
+            border-left-color: #a78bfa;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 32px;
+        }
+
+        .header {
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.6);
+            font-size: 16px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(167, 139, 250, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #a78bfa, #7c3aed);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-change.positive {
+            color: #10b981;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .chart-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-control {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chart-control.active {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            color: white;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        /* Data Table */
+        .table-section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .table-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .search-box {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            width: 250px;
+        }
+
+        .search-box::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #a78bfa;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.8);
+            font-weight: 600;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 14px;
+        }
+
+        .data-table td {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-header, .table-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">VibeKit</div>
+                <div class="user-info">Welcome back, Admin</div>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <div class="nav-icon">📊</div>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">👥</div>
+                    Users
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">📦</div>
+                    Projects
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">📈</div>
+                    Analytics
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">💳</div>
+                    Billing
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">⚙️</div>
+                    Settings
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">❓</div>
+                    Support
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+            
+            <div class="header">
+                <h1>Dashboard Overview</h1>
+                <p>Monitor your application performance and user engagement</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">👥</div>
+                    </div>
+                    <div class="stat-value">12,847</div>
+                    <div class="stat-label">Active Users</div>
+                    <div class="stat-change positive">
+                        ↗ +12.5% from last month
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">💰</div>
+                    </div>
+                    <div class="stat-value">$24,680</div>
+                    <div class="stat-label">Monthly Revenue</div>
+                    <div class="stat-change positive">
+                        ↗ +8.2% from last month
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">📊</div>
+                    </div>
+                    <div class="stat-value">98.5%</div>
+                    <div class="stat-label">System Uptime</div>
+                    <div class="stat-change positive">
+                        ↗ +0.3% from last month
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">⚡</div>
+                    </div>
+                    <div class="stat-value">1.2s</div>
+                    <div class="stat-label">Avg Response Time</div>
+                    <div class="stat-change negative">
+                        ↘ +0.1s from last month
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h3 class="chart-title">User Activity</h3>
+                    <div class="chart-controls">
+                        <button class="chart-control active" onclick="updateChart('7d')">7 Days</button>
+                        <button class="chart-control" onclick="updateChart('30d')">30 Days</button>
+                        <button class="chart-control" onclick="updateChart('90d')">90 Days</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="userChart"></canvas>
+                </div>
+            </div>
+
+            <div class="table-section">
+                <div class="table-header">
+                    <h3 class="table-title">Recent Activity</h3>
+                    <input type="text" class="search-box" placeholder="Search users..." id="searchInput">
+                </div>
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Last Seen</th>
+                            <th>Projects</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td>Sarah Johnson</td>
+                            <td>sarah@techflow.com</td>
+                            <td><span class="status-badge status-active">Active</span></td>
+                            <td>2 minutes ago</td>
+                            <td>12</td>
+                        </tr>
+                        <tr>
+                            <td>Mike Rodriguez</td>
+                            <td>mike@startupx.com</td>
+                            <td><span class="status-badge status-active">Active</span></td>
+                            <td>15 minutes ago</td>
+                            <td>8</td>
+                        </tr>
+                        <tr>
+                            <td>Anna Lee</td>
+                            <td>anna@datacorp.com</td>
+                            <td><span class="status-badge status-inactive">Inactive</span></td>
+                            <td>2 hours ago</td>
+                            <td>24</td>
+                        </tr>
+                        <tr>
+                            <td>David Chen</td>
+                            <td>david@innovate.io</td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                            <td>1 day ago</td>
+                            <td>5</td>
+                        </tr>
+                        <tr>
+                            <td>Emily Davis</td>
+                            <td>emily@design.co</td>
+                            <td><span class="status-badge status-active">Active</span></td>
+                            <td>5 minutes ago</td>
+                            <td>18</td>
+                        </tr>
+                        <tr>
+                            <td>Alex Thompson</td>
+                            <td>alex@webdev.com</td>
+                            <td><span class="status-badge status-active">Active</span></td>
+                            <td>30 minutes ago</td>
+                            <td>15</td>
+                        </tr>
+                        <tr>
+                            <td>Lisa Wang</td>
+                            <td>lisa@mobile.app</td>
+                            <td><span class="status-badge status-inactive">Inactive</span></td>
+                            <td>3 hours ago</td>
+                            <td>9</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Chart.js configuration
+        const ctx = document.getElementById('userChart').getContext('2d');
+        let userChart;
+
+        const chartData = {
+            '7d': {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                data: [1200, 1900, 2400, 1800, 2200, 2800, 3200]
+            },
+            '30d': {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                data: [12000, 14500, 18200, 21800]
+            },
+            '90d': {
+                labels: ['Month 1', 'Month 2', 'Month 3'],
+                data: [45000, 52000, 62000]
+            }
+        };
+
+        function createChart(period = '7d') {
+            if (userChart) {
+                userChart.destroy();
+            }
+
+            userChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData[period].labels,
+                    datasets: [{
+                        label: 'Active Users',
+                        data: chartData[period].data,
+                        borderColor: '#a78bfa',
+                        backgroundColor: 'rgba(167, 139, 250, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#a78bfa',
+                        pointBorderColor: '#7c3aed',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.08)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.08)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.6)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            hoverBackgroundColor: '#7c3aed'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(period) {
+            // Update active button
+            document.querySelectorAll('.chart-control').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Recreate chart with new data
+            createChart(period);
+        }
+
+        // Initialize chart
+        createChart();
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const tableBody = document.getElementById('tableBody');
+        const originalRows = Array.from(tableBody.querySelectorAll('tr'));
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            if (searchTerm === '') {
+                // Show all rows
+                tableBody.innerHTML = '';
+                originalRows.forEach(row => tableBody.appendChild(row));
+            } else {
+                // Filter rows
+                const filteredRows = originalRows.filter(row => {
+                    const text = row.textContent.toLowerCase();
+                    return text.includes(searchTerm);
+                });
+                
+                tableBody.innerHTML = '';
+                filteredRows.forEach(row => tableBody.appendChild(row));
+            }
+        });
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Navigation item click handlers
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all items
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+                
+                // Close mobile sidebar if open
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('open');
+                }
+            });
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                const mobileBtn = document.querySelector('.mobile-menu-btn');
+                
+                if (!sidebar.contains(e.target) && !mobileBtn.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
